@@ -158,7 +158,7 @@
         <div id="logs-auth-box" class="auth-box">
           <h3>[ RESTRICTED ACCESS ]</h3>
           <p>Entrez la clé d'accès pour voir les logs d'utilisation.</p>
-          <input type="password" id="logs-key-input" placeholder="XXXX-XXXX-XXXX">
+          <input type="password" id="logs-key-input" placeholder="Clé d'accès">
           <button class="run" onclick="checkLogsKey()">valider</button>
         </div>
         <div id="logs-content" style="display:none; width: 100%;">
@@ -173,7 +173,7 @@
         <div id="config-auth-box" class="auth-box">
           <h3>[ RESTRICTED ACCESS ]</h3>
           <p>Entrez la clé d'accès pour modifier la configuration.</p>
-          <input type="password" id="config-key-input" placeholder="XXXX-XXXX-XXXX">
+          <input type="password" id="config-key-input" placeholder="Clé d'accès">
           <button class="run" onclick="checkConfigKey()">valider</button>
         </div>
         <div id="config-content" style="display:none; width: 100%;">
@@ -261,29 +261,27 @@
     return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
-  // FIX : On lit le localStorage au moment du clic, pas au chargement
+  // --- LA CLÉ EST ICI ---
+  const MASTER_KEY = "OWENBOSC1";
+
   function checkLogsKey() {
     const input = document.getElementById('logs-key-input').value;
-    const validKey = localStorage.getItem('bench_logs_key'); 
-    
-    if (validKey && input === validKey) {
+    if (input === MASTER_KEY) {
         document.getElementById('logs-auth-box').style.display = 'none';
         document.getElementById('logs-content').style.display = 'block';
         renderLogs();
     } else {
-        alert('Clé incorrecte. Va sur keygen.html pour en générer une.');
+        alert('Clé incorrecte.');
     }
   }
 
   function checkConfigKey() {
     const input = document.getElementById('config-key-input').value;
-    const validKey = localStorage.getItem('bench_config_key');
-
-    if (validKey && input === validKey) {
+    if (input === MASTER_KEY) {
         document.getElementById('config-auth-box').style.display = 'none';
         document.getElementById('config-content').style.display = 'block';
     } else {
-        alert('Clé incorrecte. Va sur keygen.html pour en générer une.');
+        alert('Clé incorrecte.');
     }
   }
 
