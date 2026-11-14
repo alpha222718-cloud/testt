@@ -49,7 +49,7 @@
   .nav-item.active .icon { background: var(--green); }
   .nav-item .badge { margin-left: auto; font-size: 0.65rem; color: var(--amber); }
   
-  /* MODULES SOON (Totalement désactivés : pas de clic, pas de hover) */
+  /* MODULES SOON (Bloqués) */
   .nav-item.wip { opacity: 0.4; cursor: default; pointer-events: none; }
   .nav-item.wip .badge { color: var(--red); border: 1px solid var(--red); padding: 0 4px; border-radius: 2px; }
   
@@ -80,7 +80,7 @@
   
   .console { background: #030507; border: 1px solid var(--border); display: flex; flex-direction: column; }
   .console-head { padding: 0.5rem 0.9rem; background: var(--panel-2); border-bottom: 1px solid var(--border); font-size: 0.65rem; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; display: flex; justify-content: space-between; }
-  .console-body { padding: 0.9rem; height: 400px; overflow-y: auto; font-size: 0.78rem; line-height: 1.7; }
+  .console-body { padding: 0.9rem; height: 240px; overflow-y: auto; font-size: 0.78rem; line-height: 1.7; }
   .log-line { display: flex; gap: 0.75rem; }
   .log-line .ts { color: var(--dim); flex-shrink: 0; }
   .log-line .lvl { flex-shrink: 0; width: 3.5em; text-align: right; font-weight: 600; }
@@ -112,7 +112,6 @@
         <span class="icon"></span><span>webhook_raid</span><span class="badge">HOOK</span>
       </div>
       
-      <!-- MODULES SOON (Non-cliquables via CSS) -->
       <div class="nav-item wip">
         <span class="icon"></span><span>mail_bomber</span><span class="badge">SOON</span>
       </div>
@@ -129,8 +128,6 @@
         <span class="icon"></span><span>lookup</span><span class="badge">SOON</span>
       </div>
       
-      <div class="sidebar-label" style="margin-top:2rem">// SYSTEM</div>
-      <div class="nav-item" id="nav-logs" onclick="switchTab('logs')"><span class="icon"></span><span>logs</span></div>
     </aside>
     
     <section class="content" id="app-screen">
@@ -139,7 +136,6 @@
           <div class="status-chip" id="status-chip">idle</div>
         </div>
 
-        <!-- MODULE RAID -->
         <div class="panel" id="panel-raid">
           <div class="form-grid">
             <div class="field full"><label>Webhook URL(s) <span class="req">*</span></label><textarea id="raid-webhooks" placeholder="https://discord.com/api/webhooks/..."></textarea></div>
@@ -153,14 +149,6 @@
           </div>
         </div>
 
-        <!-- MODULE LOGS (Accès direct sans mot de passe) -->
-        <div class="panel" id="panel-logs" style="display:none">
-          <div class="console">
-            <div class="console-head"><span>system activity</span><span id="log-count">0 entries</span></div>
-            <div class="console-body" id="auth-logs-display"></div>
-          </div>
-        </div>
-
         <div class="action-bar" id="action-bar">
           <div class="hint"><span class="warn">!</span> bench only — no live targets</div>
           <button class="run" id="run-btn" onclick="executeTool()">execute</button>
@@ -168,7 +156,7 @@
         
         <div class="console" id="main-console">
           <div class="console-head"><span>stdout / stderr</span><span>auto-scroll: on</span></div>
-          <div class="console-body" id="console" style="height: 240px;">
+          <div class="console-body" id="console">
             <div class="log-line info"><span class="ts">00:00:00</span><span class="lvl">INFO</span><span class="msg">bench initialized</span></div>
           </div>
         </div>
@@ -178,61 +166,10 @@
 
 <script>
   let currentMod = 'raid';
-  
-  // Récupération des logs simulés
-  let systemLogs = JSON.parse(localStorage.getItem('bench_system_logs') || '[]');
-  if(systemLogs.length === 0) {
-      systemLogs = [
-          { time: "23:10:05", action: "CONNEXION", user: "alpha222718@gmail.com", details: "Login réussi" },
-          { time: "23:12:44", action: "EXECUTION", user: "alpha222718@gmail.com", details: "Raid vers webhook (50 msgs)" }
-      ];
-  }
-
-  window.onload = () => {
-    switchTab('raid'); 
-  };
 
   function switchTab(tabId) {
     if(!tabId) return;
     currentMod = tabId;
-    
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    
-    if (tabId === 'raid') document.getElementById('nav-raid').classList.add('active');
-    if (tabId === 'logs') document.getElementById('nav-logs').classList.add('active');
-    
-    const titles = { raid: 'webhook_raid', logs: 'system_logs' };
-    const paths = { raid: '/modules/discord/webhook', logs: '/system/logs' };
-    document.getElementById('mod-title').textContent = titles[tabId];
-    document.getElementById('mod-path').textContent = paths[tabId];
-    
-    document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-    document.getElementById('panel-' + tabId).style.display = 'block';
-
-    if (tabId === 'logs') {
-      document.getElementById('action-bar').style.display = 'none';
-      document.getElementById('main-console').style.display = 'none';
-      renderLogs(); // Affichage direct
-    } else {
-      document.getElementById('action-bar').style.display = 'flex';
-      document.getElementById('main-console').style.display = 'flex';
-    }
-  }
-
-  function renderLogs() {
-    const display = document.getElementById('auth-logs-display');
-    document.getElementById('log-count').textContent = systemLogs.length + ' entries';
-    display.innerHTML = '';
-    if (systemLogs.length === 0) {
-      display.innerHTML = '<div style="color: var(--dim);">Aucun log enregistré.</div>';
-      return;
-    }
-    systemLogs.slice().reverse().forEach(entry => {
-      const div = document.createElement('div');
-      div.className = 'log-line ok';
-      div.innerHTML = `<span class="ts">${entry.time}</span><span class="lvl" style="color:var(--amber)">${entry.action}</span><span class="msg"><b>${entry.user}</b> - ${escapeHtml(entry.details)}</span>`;
-      display.appendChild(div);
-    });
   }
 
   function logConsole(level, msg) {
