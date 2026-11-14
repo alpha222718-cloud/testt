@@ -203,12 +203,6 @@
     logs:    { title: 'system_logs', path: '/system/logs' },
     config:  { title: 'system_config', path: '/system/config' },
   };
-  
-  // Correction : On récupère la clé du localStorage, si elle n'existe pas, on ne la crée PAS par défaut (on laisse undefined pour forcer la génération via keygen.html)
-  let ACCESS_KEYS = {
-    logs: localStorage.getItem('bench_logs_key') || 'NOT_SET',
-    config: localStorage.getItem('bench_config_key') || 'NOT_SET'
-  };
 
   let systemLogs = JSON.parse(localStorage.getItem('bench_system_logs') || '[]');
   function addSystemLog(action, details) {
@@ -267,24 +261,29 @@
     return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
+  // FIX : On lit le localStorage au moment du clic, pas au chargement
   function checkLogsKey() {
     const input = document.getElementById('logs-key-input').value;
-    if (ACCESS_KEYS.logs !== 'NOT_SET' && input === ACCESS_KEYS.logs) {
+    const validKey = localStorage.getItem('bench_logs_key'); 
+    
+    if (validKey && input === validKey) {
         document.getElementById('logs-auth-box').style.display = 'none';
         document.getElementById('logs-content').style.display = 'block';
         renderLogs();
     } else {
-        alert('Clé incorrecte ou non générée. Va sur keygen.html');
+        alert('Clé incorrecte. Va sur keygen.html pour en générer une.');
     }
   }
 
   function checkConfigKey() {
     const input = document.getElementById('config-key-input').value;
-    if (ACCESS_KEYS.config !== 'NOT_SET' && input === ACCESS_KEYS.config) {
+    const validKey = localStorage.getItem('bench_config_key');
+
+    if (validKey && input === validKey) {
         document.getElementById('config-auth-box').style.display = 'none';
         document.getElementById('config-content').style.display = 'block';
     } else {
-        alert('Clé incorrecte ou non générée. Va sur keygen.html');
+        alert('Clé incorrecte. Va sur keygen.html pour en générer une.');
     }
   }
 
