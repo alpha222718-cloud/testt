@@ -132,39 +132,33 @@
     <aside class="sidebar">
       <div class="sidebar-label">// MODULES</div>
       
-      <!-- MODULE RAID ACTIF -->
       <div class="nav-item active" id="nav-raid" onclick="switchTab('raid')">
         <span class="icon"></span><span>webhook_raid</span><span class="badge">HOOK</span>
       </div>
       
-      <!-- MODULES SOON -->
-      <div class="nav-item wip" id="nav-soon-mail" onclick="switchTab('soon')">
+      <div class="nav-item wip" id="nav-soon" onclick="switchTab('soon')">
         <span class="icon"></span><span>mail_bomber</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" id="nav-soon-sms" onclick="switchTab('soon')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>SMS_bomber</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" id="nav-soon-tg" onclick="switchTab('soon')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>tg_mail_proxy</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" id="nav-soon-ddos" onclick="switchTab('soon')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>DDos_voc</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" id="nav-soon-lookup" onclick="switchTab('soon')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>lookup</span><span class="badge">SOON</span>
       </div>
       
       <div class="sidebar-label" style="margin-top:2rem">// SYSTEM</div>
-      <div class="nav-item" id="nav-logs" onclick="switchTab('logs')">
-        <span class="icon"></span><span>logs</span>
-      </div>
-      <div class="nav-item" onclick="logout()" style="color: var(--red); margin-top: 1rem;">
-        <span class="icon"></span><span>logout</span>
-      </div>
+      <div class="nav-item" id="nav-logs" onclick="switchTab('logs')"><span class="icon"></span><span>logs</span></div>
+      <div class="nav-item" onclick="logout()" style="color: var(--red); margin-top: 1rem;"><span class="icon"></span><span>logout</span></div>
     </aside>
     
     <section class="content" id="app-screen">
@@ -173,7 +167,7 @@
           <div class="status-chip" id="status-chip">idle</div>
         </div>
 
-        <!-- PANNEAU RAID -->
+        <!-- MODULE RAID -->
         <div class="panel" id="panel-raid">
           <div class="form-grid">
             <div class="field full"><label>Webhook URL(s) <span class="req">*</span></label><textarea id="raid-webhooks" placeholder="https://discord.com/api/webhooks/..."></textarea></div>
@@ -187,7 +181,7 @@
           </div>
         </div>
 
-        <!-- PANNEAU LOGS -->
+        <!-- MODULE LOGS -->
         <div class="panel" id="panel-logs" style="display:none">
           <div class="console" style="height: 400px;">
             <div class="console-head"><span>system activity</span><span id="log-count">0 entries</span></div>
@@ -195,7 +189,7 @@
           </div>
         </div>
         
-        <!-- PANNEAU SOON -->
+        <!-- MODULE SOON -->
         <div class="panel" id="panel-soon" style="display:none">
           <div class="coming-soon">
             <h3>MODULE SOON</h3>
@@ -256,7 +250,9 @@
     document.getElementById('auth-overlay').style.display = 'none';
     document.getElementById('main-container').style.display = 'grid';
     document.getElementById('current-user').textContent = currentUserEmail;
-    switchTab('raid'); // On force le retour sur raid au démarrage
+    
+    // Au chargement, on force l'affichage du Raid
+    switchTab('raid'); 
     renderLogs();
   }
 
@@ -366,10 +362,7 @@
     // Activation de l'onglet en cours
     if (tabId === 'raid') document.getElementById('nav-raid').classList.add('active');
     if (tabId === 'logs') document.getElementById('nav-logs').classList.add('active');
-    if (tabId === 'soon') {
-        // On active visuellement le premier module SOON par défaut pour l'exemple
-        document.getElementById('nav-soon-mail').classList.add('active'); 
-    }
+    if (tabId === 'soon') document.getElementById('nav-soon').classList.add('active');
     
     const titles = { raid: 'webhook_raid', logs: 'system_logs', soon: 'module_in_dev' };
     const paths = { raid: '/modules/discord/webhook', logs: '/system/logs', soon: '/modules/dev' };
