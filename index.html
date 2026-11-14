@@ -49,8 +49,8 @@
   .nav-item.active .icon { background: var(--green); }
   .nav-item .badge { margin-left: auto; font-size: 0.65rem; color: var(--amber); }
   
-  /* STYLE DES MODULES SOON (Désactivés) */
-  .nav-item.wip { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  /* MODULES SOON (Totalement désactivés : pas de clic, pas de hover) */
+  .nav-item.wip { opacity: 0.4; cursor: default; pointer-events: none; }
   .nav-item.wip .badge { color: var(--red); border: 1px solid var(--red); padding: 0 4px; border-radius: 2px; }
   
   .content { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative; overflow-y: auto;}
@@ -80,7 +80,7 @@
   
   .console { background: #030507; border: 1px solid var(--border); display: flex; flex-direction: column; }
   .console-head { padding: 0.5rem 0.9rem; background: var(--panel-2); border-bottom: 1px solid var(--border); font-size: 0.65rem; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; display: flex; justify-content: space-between; }
-  .console-body { padding: 0.9rem; height: 240px; overflow-y: auto; font-size: 0.78rem; line-height: 1.7; }
+  .console-body { padding: 0.9rem; height: 400px; overflow-y: auto; font-size: 0.78rem; line-height: 1.7; }
   .log-line { display: flex; gap: 0.75rem; }
   .log-line .ts { color: var(--dim); flex-shrink: 0; }
   .log-line .lvl { flex-shrink: 0; width: 3.5em; text-align: right; font-weight: 600; }
@@ -89,10 +89,6 @@
   .log-line.ok .lvl { color: var(--green); } .log-line.ok .msg { color: var(--green); }
   .log-line.warn .lvl { color: var(--amber); } .log-line.warn .msg { color: var(--amber); }
   .log-line.err .lvl { color: var(--red); } .log-line.err .msg { color: var(--red); }
-  
-  /* ECRAN LOGS */
-  #logs-auth-screen { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2rem; text-align: center; }
-  #logs-auth-screen input { width: 250px; text-align: center; letter-spacing: 0.2em; }
   
   @media (max-width: 720px) { .main { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid var(--border); } .form-grid { grid-template-columns: 1fr; } }
 </style>
@@ -116,7 +112,7 @@
         <span class="icon"></span><span>webhook_raid</span><span class="badge">HOOK</span>
       </div>
       
-      <!-- MODULES SOON (Désactivés) -->
+      <!-- MODULES SOON (Non-cliquables via CSS) -->
       <div class="nav-item wip">
         <span class="icon"></span><span>mail_bomber</span><span class="badge">SOON</span>
       </div>
@@ -157,25 +153,12 @@
           </div>
         </div>
 
-        <!-- MODULE LOGS (Protégé) -->
+        <!-- MODULE LOGS (Accès direct sans mot de passe) -->
         <div class="panel" id="panel-logs" style="display:none">
-          
-          <!-- Auth pour les logs -->
-          <div id="logs-auth-screen">
-            <h2 style="color: var(--amber);">ACCÈS LOGS</h2>
-            <p style="color: var(--dim); font-size: 0.85rem;">Entre le mot de passe pour voir les logs.</p>
-            <input type="password" id="logs-pass" placeholder="Mot de passe">
-            <button class="run" onclick="checkLogsAuth()">DÉVERROUILLER</button>
+          <div class="console">
+            <div class="console-head"><span>system activity</span><span id="log-count">0 entries</span></div>
+            <div class="console-body" id="auth-logs-display"></div>
           </div>
-
-          <!-- Contenu des logs -->
-          <div id="logs-content" style="display:none;">
-            <div class="console" style="height: 400px;">
-              <div class="console-head"><span>system activity</span><span id="log-count">0 entries</span></div>
-              <div class="console-body" id="auth-logs-display" style="height: 100%;"></div>
-            </div>
-          </div>
-          
         </div>
 
         <div class="action-bar" id="action-bar">
@@ -185,7 +168,7 @@
         
         <div class="console" id="main-console">
           <div class="console-head"><span>stdout / stderr</span><span>auto-scroll: on</span></div>
-          <div class="console-body" id="console">
+          <div class="console-body" id="console" style="height: 240px;">
             <div class="log-line info"><span class="ts">00:00:00</span><span class="lvl">INFO</span><span class="msg">bench initialized</span></div>
           </div>
         </div>
@@ -195,8 +178,15 @@
 
 <script>
   let currentMod = 'raid';
+  
+  // Récupération des logs simulés
   let systemLogs = JSON.parse(localStorage.getItem('bench_system_logs') || '[]');
-  const LOGS_PASSWORD = "OWENBOSC1";
+  if(systemLogs.length === 0) {
+      systemLogs = [
+          { time: "23:10:05", action: "CONNEXION", user: "alpha222718@gmail.com", details: "Login réussi" },
+          { time: "23:12:44", action: "EXECUTION", user: "alpha222718@gmail.com", details: "Raid vers webhook (50 msgs)" }
+      ];
+  }
 
   window.onload = () => {
     switchTab('raid'); 
@@ -222,25 +212,10 @@
     if (tabId === 'logs') {
       document.getElementById('action-bar').style.display = 'none';
       document.getElementById('main-console').style.display = 'none';
-      
-      // Reset de l'auth quand on clique sur logs
-      document.getElementById('logs-auth-screen').style.display = 'flex';
-      document.getElementById('logs-content').style.display = 'none';
-      document.getElementById('logs-pass').value = '';
+      renderLogs(); // Affichage direct
     } else {
       document.getElementById('action-bar').style.display = 'flex';
       document.getElementById('main-console').style.display = 'flex';
-    }
-  }
-
-  function checkLogsAuth() {
-    const pass = document.getElementById('logs-pass').value;
-    if (pass === LOGS_PASSWORD) {
-      document.getElementById('logs-auth-screen').style.display = 'none';
-      document.getElementById('logs-content').style.display = 'block';
-      renderLogs();
-    } else {
-      alert("Mot de passe incorrect.");
     }
   }
 
